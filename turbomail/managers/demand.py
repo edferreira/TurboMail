@@ -115,7 +115,7 @@ class DemandManager(Manager):
 
             else:
                 log.info("Delivery of message %s successful or deferred." % message.id)
-                debbuglog.info("Delivery of message %s successful or deferred." % message.id)
+                debuglog.info("Delivery of message %s successful or deferred." % message.id)
         transport.stop()
 
     def optimum(self):
