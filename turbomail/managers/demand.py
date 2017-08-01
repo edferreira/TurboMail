@@ -91,6 +91,7 @@ class DemandManager(Manager):
             try:
                 debuglog.debug("Worker try to deliver message")
                 message = self.queue.get(True, self.timeout)
+                debuglog.debug("message retrieved")
                 transport.deliver(message)
 
             except Empty:
@@ -102,7 +103,9 @@ class DemandManager(Manager):
                 debuglog.debug("Worker TransportExhaustedException")
                 log.debug("Worker death from transport exhaustion - spawning child.")
                 self.deliver(message)
+                debuglog.debug("demmand deliver")
                 self.spawn()
+                debuglog.debug("demmand spawn")
                 break
 
             except:
@@ -112,6 +115,7 @@ class DemandManager(Manager):
 
             else:
                 log.info("Delivery of message %s successful or deferred." % message.id)
+                debbuglog.info("Delivery of message %s successful or deferred." % message.id)
         transport.stop()
 
     def optimum(self):
