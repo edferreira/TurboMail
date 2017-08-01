@@ -18,6 +18,7 @@ __all__ = ['load']
 
 log = logging.getLogger("turbomail.transport")
 deliverylog = logging.getLogger("turbomail.delivery")
+debuglog = logging.getLogger("turbomail.debug")
 
 
 
@@ -45,6 +46,7 @@ class SMTPTransport(Transport):
         self.nr_messages_sent_with_this_connection = None
 
     def close_connection(self):
+        debuglog.debug("Trying to close SMTP connection")
         if self.is_connected():
             log.debug("Closing SMTP connection.")
             try:
@@ -59,10 +61,12 @@ class SMTPTransport(Transport):
                 self.connection = None
 
     def stop(self):
+        debuglog.debug("SMTP stopping")
         super(SMTPTransport, self).stop()
         self.close_connection()
 
     def is_connected(self):
+        debuglog.debug("is SMTP connected?")
         return getattr(self.connection, 'sock', None) is not None
 
     def _encrypt_connection_with_tls_if_configured(self, connection):
@@ -93,29 +97,36 @@ class SMTPTransport(Transport):
         return connection
 
     def connect_to_server_if_nessary(self):
+        debuglog.debug("connect to server if necessary")
         if not self.is_connected():
             self.connection = self.connect_to_server()
             self.nr_messages_sent_with_this_connection = 0
 
     def can_send_more_messages_on_this_connection(self):
+        debuglog.debug("Send SMTP message on connection")
         return self.nr_messages_sent_with_this_connection < self.max_number_of_messages_per_connection
 
     def send_with_smtp(self, message):
+        debuglog.debug("Send with SMTP")
         try:
+            debuglog.debug("Try to sendmail")
             self.nr_messages_sent_with_this_connection += 1
             sender = str(message.envelope_sender)
             recipients = message.recipients.string_addresses
             self.connection.sendmail(sender, recipients, str(message))
         except SMTPSenderRefused, e:
             # The envelope sender was refused.  This is bad.
+            debuglog.debug("SMTPSenderRefused")
             deliverylog.error("%s REFUSED %s %s" % (message.id, e.__class__.__name__, get_message(e)))
             raise
         except SMTPRecipientsRefused, e:
             # All recipients were refused.  Log which recipients.
             # This allows you to automatically parse your logs for bad e-mail addresses.
+            debuglog.debug("SMTPRecipientsRefused")
             deliverylog.warning("%s REFUSED %s %s" % (message.id, e.__class__.__name__, get_message(e)))
             raise
         except SMTPServerDisconnected, e:
+            debuglog.debug("SMTPServerDisconnected")
             raise TransportExhaustedException
         except Exception, e:
             cls_name = e.__class__.__name__
